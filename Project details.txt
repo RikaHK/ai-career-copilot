@@ -1,0 +1,139 @@
+Master Project Blueprint: AI Career Copilot
+1. Project Overview
+
+AI Career Copilot is a full-stack, AI-driven application designed to automate the career progression lifecycle. It acts as a multi-agent system that digests user resumes, matches them semantically to job descriptions, identifies skill gaps, generates custom learning roadmaps, and conducts interactive mock interviews.
+Core Tech Stack
+
+    Frontend: Next.js (App Router), React, TypeScript, Tailwind CSS, ShadCN UI
+
+    Backend: FastAPI, Python, SQLAlchemy, SQLite (Development) / PostgreSQL (Production), JWT Auth
+
+    AI & Machine Learning:
+
+        Local LLMs (Llama 3.1 8B via Ollama)
+
+        Structured Output Enforcement (Instructor / Pydantic)
+
+        Vector Search & Embeddings (FAISS, Sentence-Transformers / BGE)
+
+        Agentic Framework (LangGraph)
+
+        PDF Parsing (PyMuPDF)
+
+2. Project Phases & Methodology
+✅ Phase 0: Infrastructure & Skeleton (COMPLETED)
+
+    Goal: Establish the base architecture and ensure bidirectional communication between the frontend and backend.
+
+    Methodology:
+
+        Initialized Next.js 14+ frontend with Tailwind v4.
+
+        Initialized Python FastAPI backend.
+
+        Configured CORS middleware to allow localhost:3000 to communicate with localhost:8000.
+
+        Implemented a simple /health check to verify the full-stack handshake.
+
+✅ Phase 1: User Identity & Authentication (COMPLETED)
+
+    Goal: Secure the application with modern authentication standards.
+
+    Methodology:
+
+        Backend: Engineered a relational database using SQLAlchemy. Migrated from deprecated passlib to modern native bcrypt for secure password hashing. Implemented JWT (JSON Web Token) generation.
+
+        Frontend: Built responsive, accessible Login/Register forms using ShadCN UI. Handled token storage via Browser Cookies (best practice for Next.js Server Components).
+
+        Routing: Implemented Next.js route groups (auth) and secure redirects to a protected /dashboard.
+
+✅ Phase 2: Resume Intelligence & AI Parsing (COMPLETED)
+
+    Goal: Convert unstructured, messy PDF resumes into highly structured, relational JSON data using Local AI.
+
+    Methodology:
+
+        Data Extraction: Utilized PyMuPDF to read raw bytes from uploaded files and convert them to text, handling invisible characters and page breaks.
+
+        AI Processing: Integrated Llama 3.1 (8B) via Ollama's OpenAI-compatible API.
+
+        Structured Output: Used the instructor library and Pydantic models to force the LLM to output valid JSON instead of conversational text.
+
+        Prompt Engineering: Applied temperature=0.0, high max_tokens, and aggressive system prompting to solve common local LLM bugs (List Truncation, Schema Hallucination, and Markdown injection).
+
+        Frontend UI: Built a dynamic React dashboard that visually maps the complex nested JSON into ShadCN Badges and CSS Grid layouts.
+
+⏳ Phase 3: Semantic Job Matching (NEXT UP)
+
+    Goal: Match the user's parsed resume to job descriptions without relying on rigid keyword matching.
+
+    Methodology:
+
+        Seed the SQLite database with 50-100 realistic job descriptions.
+
+        Generate high-dimensional Vector Embeddings of both the parsed resume and the job descriptions using Hugging Face models (e.g., BAAI/bge-small-en).
+
+        Index vectors using FAISS for sub-millisecond retrieval.
+
+        Apply a Cross-Encoder Reranker to the top results to achieve maximum semantic accuracy (NDCG optimization).
+
+        Display a "Match Percentage Score" on the frontend.
+
+⏳ Phase 4: Skill Gap & Roadmap Generation
+
+    Goal: Dynamically generate study plans based on the delta between the user's resume and their target job.
+
+    Methodology:
+
+        Pass the User Skills + Required Job Skills into the LLM.
+
+        Use Server-Sent Events (SSE) in FastAPI to stream the LLM's response chunk-by-chunk.
+
+        Capture the stream on the Next.js frontend and render it in real-time using react-markdown.
+
+⏳ Phase 5: Agentic Interview Prep
+
+    Goal: Simulate a technical and behavioral interview using a multi-agent system.
+
+    Methodology:
+
+        Integrate LangGraph to create a multi-node agent architecture.
+
+        Node 1 (Interviewer): Generates context-aware questions based on the resume and job match.
+
+        Node 2 (Evaluator): Grades the user's typed response and provides feedback.
+
+        Build a sleek, interactive Chat UI on the frontend.
+
+⏳ Phase 6: MLOps & Deployment
+
+    Goal: Push the application to production so recruiters and users can access it globally.
+
+    Methodology:
+
+        Containerize the FastAPI backend and Vector DB using Docker.
+
+        Deploy the Next.js frontend to Vercel.
+
+        Deploy the Backend infrastructure to AWS EC2 or DigitalOcean Droplets.
+
+        (Optional): Swap the local Ollama LLM for a free-tier Cloud API (like Groq) to eliminate cloud GPU hosting costs for the portfolio.
+
+3. Current Project Status Summary
+
+Status: 🟢 ON TRACK (Approximately 40% Complete)
+
+What we have conquered so far:
+
+    Bidirectional Full-Stack Communication.
+
+    Complete JWT Authentication Flow.
+
+    Next.js App Router State Management (Hydration fixes).
+
+    Complex AI Prompt Engineering (Overcoming Local Model limitations).
+
+    Unstructured PDF to Structured Relational Data transformation.
+
+Immediate Next Step:
+Begin Phase 3. We will write a Python script to seed your database with dummy tech jobs, set up FAISS, and start generating vector embeddings!
