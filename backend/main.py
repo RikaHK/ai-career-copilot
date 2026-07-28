@@ -2,6 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, status, UploadFile, File, R
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import services, matcher, json
+import numpy as np
 from sqlalchemy.orm import Session
 
 import models, schemas, auth
@@ -44,44 +45,61 @@ def login(user: schemas.UserCreate, db: Session = Depends(get_db)):
     return {"access_token": access_token, "token_type": "bearer"}
     
 @app.post("/upload-resume")
-async def upload_resume(file: UploadFile = File(...)):
-    # 1. Read the file uploaded by the frontend
+async def upload_resume(
+    file: UploadFile = File(...), 
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
     content = await file.read()
-    
-    # 2. Extract raw text using PyMuPDF
     raw_text = services.extract_text_from_pdf(content)
-    
-    # 3. Use Local LLM to convert raw text into structured JSON
-    # This might take a few seconds depending on your hardware!
     parsed_data = services.parse_resume_with_llm(raw_text)
     
-    return {
-        "filename": file.filename,
-        "parsed_data": parsed_data.dict()
-    }
+    # Save this specific session to the history
+    new_analysis = models.Analysis(
+        user_id=current_user.id,
+        filename=file.filename,
+        resume_data=parsed_data.dict()
+    )
+    db.add(new_analysis)
+    db.commit()
+    db.refresh(new_analysis)
+    
+    return {"id": new_analysis.id, "parsed_data": parsed_data.dict()}
+
+@app.get("/get-history")
+async def get_history(current_user: models.User = Depends(auth.get_current_user)):
+    return current_user.analyses # Returns all past uploads for this user ONLY
     
 @app.post("/save-resume")
-async def save_resume(data: dict, db: Session = Depends(get_db)):
-    # In a real app, you'd get the user_id from the JWT token
-    # For now, let's just update the first user for simplicity
-    user = db.query(models.User).first() 
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    user.resume_json = data
+async def save_resume(
+    resume_data: dict, 
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user) # <-- ADD THIS
+):
+    new_entry = models.Analysis(
+        user_id=current_user.id,
+        filename="Manual Save",
+        resume_data=resume_data
+    )
+    db.add(new_entry)
     db.commit()
-    return {"message": "Resume saved successfully"}
+    return {"message": "Saved to history"}
 
 @app.get("/get-resume")
-async def get_resume(db: Session = Depends(get_db)):
-    # Get the first user
-    user = db.query(models.User).first()
+async def get_resume(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user) # <-- ADD THIS
+):
+    # Fetch latest analysis for THIS user only
+    latest_analysis = db.query(models.Analysis)\
+        .filter(models.Analysis.user_id == current_user.id)\
+        .order_by(models.Analysis.created_at.desc())\
+        .first()
     
-    # If no user exists yet, return empty
-    if not user:
-        return {"resume_json": None}
-        
-    return {"resume_json": user.resume_json}
+    if latest_analysis:
+        return {"resume_json": latest_analysis.resume_data}
+    return {"resume_json": None}
+
     
 @app.post("/match-jobs")
 async def match_jobs(resume_data: dict, db: Session = Depends(get_db)):
@@ -96,6 +114,30 @@ async def match_jobs(resume_data: dict, db: Session = Depends(get_db)):
     
     return {"matches": matches}
     
+    
+@app.post("/match-custom")
+async def match_custom(request: Request, db: Session = Depends(get_db)):
+    data = await request.json()
+    resume_data = data.get("resume_data")
+    job_description = data.get("job_description")
+
+    # Reuse your existing matching logic but for 1 specific string
+    # We'll calculate the cosine similarity/distance manually using the model
+    resume_text = f"Skills: {', '.join(resume_data.get('skills', []))}"
+    
+    # Embed both
+    res_vec = matcher.model.encode([resume_text])
+    job_vec = matcher.model.encode([job_description])
+    
+    # Calculate distance (L2)
+    dist = np.linalg.norm(res_vec - job_vec)
+    
+    # Convert to match percentage using your existing formula
+    match_percentage = max(0, min(100, int(100 - (dist * 15))))
+    
+    return {"match_percentage": match_percentage}
+
+
 @app.post("/generate-roadmap")
 async def generate_roadmap(request: Request):
     data = await request.json()

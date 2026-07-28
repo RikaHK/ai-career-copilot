@@ -84,3 +84,31 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+@keyframes mesh-drift {
+  0% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+.mesh-blob {
+  position: absolute;
+  filter: blur(80px);
+  opacity: 0.4;
+  z-index: 0;
+  animation: mesh-drift 15s infinite alternate ease-in-out;
+}
+
+/* Custom Typography for AI Roadmaps */
+.prose-blue h3 {
+  @apply text-blue-600 font-black tracking-tight text-2xl mt-8 mb-4 border-b border-blue-500/10 pb-2;
+}
+
+.prose-blue li {
+  @apply relative pl-2 text-foreground/80 font-medium;
+}
+
+.prose-blue strong {
+  @apply text-blue-500 font-black;
+}

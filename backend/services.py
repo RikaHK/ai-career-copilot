@@ -79,12 +79,12 @@ def parse_resume_with_llm(text: str) -> ResumeInfo:
             {
                 "role": "system", 
                 "content": (
-                    "You are a strict data extraction AI. Extract the candidate's data from the resume. "
-                    "CRITICAL INSTRUCTIONS: "
-                    "1. DO NOT output a JSON schema. DO NOT output '$defs' or 'properties'. "
-                    "2. You MUST extract EVERY project under 'Major Projects'. Keep reading past page breaks. "
-                    "3. DO NOT wrap project names in angle brackets (<>). Just output the raw text name. "
-                    "4. Output ONLY the actual data."
+                    "You are a strict data extraction AI. "
+                    "CRITICAL: Extract EVERY technical skill mentioned. "
+                    "Do NOT stop after the first category. Look for categories like: "
+                    "'Languages', 'AI & Machine Learning', 'Backend & Cloud', and 'DevOps & Tools'. "
+                    "Extract them ALL into the 'skills' list. If there are 30 skills, list 30 skills."
+                    "Do not hallucinate skills that are not mentioned."
                 )
             },
             {
